@@ -1,0 +1,28 @@
+# API version for core Kubernetes group
+apiVersion: v1
+
+# Kind specifies that this manifest defines a ConfigMap resource for key-value configuration storage
+kind: ConfigMap
+
+# Metadata for resource identification inside the cluster
+metadata:
+  # Unique name referenced by workloads to inject environment variables
+  name: todo-app-config
+  # Target namespace where the ConfigMap is deployed
+  namespace: todo-app
+  labels:
+    app.kubernetes.io/name: todo-app
+    app.kubernetes.io/component: configuration
+
+# Data section containing non-sensitive key-value pairs
+data:
+  # Execution mode for Node.js application
+  NODE_ENV: "production"
+  # Port for Node.js backend server to listen on
+  PORT: "5000"
+  # Log level verbosity for Winston logger
+  LOG_LEVEL: "info"
+  # CORS origin policy configuration allowing cross-domain requests
+  CORS_ORIGIN: "*"
+  # Base API URL used by frontend client to reach the backend service
+  VITE_API_URL: "/api"

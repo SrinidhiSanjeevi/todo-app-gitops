@@ -1,0 +1,127 @@
+# API version for workload deployment definitions
+apiVersion: apps/v1
+
+# Kind specifies that this manifest creates a Deployment controller managing Pod replicas
+kind: Deployment
+
+# Metadata identifying the backend deployment
+metadata:
+  # Name of the deployment resource
+  name: backend-deployment
+  # Namespace scope
+  namespace: todo-app
+  # Metadata labels for querying and filtering
+  labels:
+    app.kubernetes.io/name: todo-app
+    app.kubernetes.io/component: backend
+
+# Specification describing desired deployment state
+spec:
+  # Desired number of pod replicas running concurrently for high availability
+  replicas: 2
+
+  # Selector matching pods controlled by this deployment
+  selector:
+    matchLabels:
+      app: backend-app
+
+  # Pod template definition
+  template:
+    metadata:
+      # Labels applied to created pods
+      labels:
+        app: backend-app
+        app.kubernetes.io/component: backend
+
+    # Pod specification detailing container properties
+    spec:
+      # Pod-level security context enforcing least-privilege runtime practices
+      securityContext:
+        # Enforces container process execution as non-root user
+        runAsNonRoot: true
+        # System UID assigned to container process (matching Dockerfile node user 10001)
+        runAsUser: 10001
+        # System GID assigned to container process group
+        runAsGroup: 10001
+        # Group ID applied to mounted volumes
+        fsGroup: 10001
+
+      # Containers array running inside pod
+      containers:
+        # Container identifier
+        - name: backend-container
+          # Image URI pointing to Azure Container Registry (ACR) repository and tag
+          image: acrtodoopsdemo.azurecr.io/todo-backend:latest
+          # Pull policy ensuring local image cache utilization or Always pull for production
+          imagePullPolicy: IfNotPresent
+
+          # Security context applied specifically to this container
+          securityContext:
+            # Prevents privilege escalation via setuid/setgid binaries
+            allowPrivilegeEscalation: false
+            # Prevents writing to root filesystem; mounted /tmp required if write operations exist
+            readOnlyRootFilesystem: false
+            # Drops all Linux kernel capabilities to eliminate risk surfaces
+            capabilities:
+              drop:
+                - ALL
+
+          # Container network ports specification
+          ports:
+            # Container port exposing Express server
+            - containerPort: 5000
+              name: http
+              protocol: TCP
+            # Port designated for Prometheus metrics scraping
+            - containerPort: 5000
+              name: metrics
+              protocol: TCP
+
+          # Inject environment variables from ConfigMap and Secret resources
+          envFrom:
+            # Inject all non-sensitive variables from ConfigMap
+            - configMapRef:
+                name: todo-app-config
+            # Inject sensitive secret variables from Secret resource
+            - secretRef:
+                name: todo-app-secret
+
+          # Resource limits and requests for Kubernetes scheduler and HorizontalPodAutoscaler
+          resources:
+            # Minimum guaranteed resources requested from node
+            requests:
+              cpu: "100m"      # 100 millicores (0.1 CPU core)
+              memory: "128Mi"  # 128 Megabytes RAM
+            # Maximum allowed resource consumption before throttling or OOM-kill
+            limits:
+              cpu: "250m"      # 250 millicores max CPU utilization
+              memory: "256Mi"  # 256 Megabytes max RAM
+
+          # Liveness Probe checks if container is alive; restarts container if probe fails
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 15  # Delay before first check
+            periodSeconds: 10         # Interval between checks
+            timeoutSeconds: 5         # Seconds before timeout error
+            failureThreshold: 3       # Consecutive failures before restart
+
+          # Readiness Probe checks if container is ready to accept user traffic
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 5   # Delay before first check
+            periodSeconds: 5         # Interval between checks
+            timeoutSeconds: 3        # Seconds before timeout error
+            failureThreshold: 2      # Consecutive failures before marking unready
+
+          # Startup Probe ensures slow-starting applications initialize before liveness probes activate
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 10

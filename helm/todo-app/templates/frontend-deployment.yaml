@@ -1,0 +1,56 @@
+# API Version for Workload Deployment resource
+apiVersion: apps/v1
+
+# Kind specifies Deployment controller
+kind: Deployment
+
+# Metadata configuration template
+metadata:
+  name: {{ include "todo-app.fullname" . }}-frontend
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "todo-app.labels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+
+# Spec section configuring replicas, selectors, and pod templates
+spec:
+  replicas: {{ .Values.frontend.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "todo-app.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: frontend
+  template:
+    metadata:
+      labels:
+        {{- include "todo-app.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: frontend
+    spec:
+      securityContext:
+        runAsNonRoot: {{ .Values.frontend.securityContext.runAsNonRoot }}
+        runAsUser: {{ .Values.frontend.securityContext.runAsUser }}
+        runAsGroup: {{ .Values.frontend.securityContext.runAsGroup }}
+      containers:
+        - name: frontend
+          image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
+          imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.frontend.service.targetPort }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "todo-app.fullname" . }}-config
+          resources:
+            {{- toYaml .Values.frontend.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.frontend.probes.liveness.path }}
+              port: {{ .Values.frontend.service.targetPort }}
+            initialDelaySeconds: {{ .Values.frontend.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.frontend.probes.liveness.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.frontend.probes.readiness.path }}
+              port: {{ .Values.frontend.service.targetPort }}
+            initialDelaySeconds: {{ .Values.frontend.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.frontend.probes.readiness.periodSeconds }}

@@ -1,0 +1,41 @@
+# API Version for Prometheus Operator Monitoring group
+apiVersion: monitoring.coreos.com/v1
+
+# Kind specifies ServiceMonitor resource managing Prometheus scrape targets
+kind: ServiceMonitor
+
+# Metadata identifying ServiceMonitor resource
+metadata:
+  # Name of ServiceMonitor
+  name: backend-servicemonitor
+  # Target namespace where monitor operates
+  namespace: todo-app
+  # Labels required for Prometheus Operator discovery
+  labels:
+    app.kubernetes.io/name: todo-app
+    app.kubernetes.io/component: backend
+    release: prometheus
+
+# Specification detailing service endpoints to scrape
+spec:
+  # Label selector matching backend service
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: todo-app
+      app.kubernetes.io/component: backend
+
+  # Target namespace selector
+  namespaceSelector:
+    matchNames:
+      - todo-app
+
+  # Array of scrape endpoints
+  endpoints:
+    # Service port name matching backend service metrics port
+    - port: metrics
+      # HTTP Path exposed by prom-client
+      path: /metrics
+      # Scrape interval frequency
+      interval: 15s
+      # Scrape timeout
+      scrapeTimeout: 10s

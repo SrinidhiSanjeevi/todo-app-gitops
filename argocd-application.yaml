@@ -1,0 +1,64 @@
+# API Version for ArgoCD Custom Resource Definition (CRD)
+apiVersion: argoproj.io/v1alpha1
+
+# Kind specifies an ArgoCD Application resource managing GitOps deployment state
+kind: Application
+
+# Metadata identifying ArgoCD Application
+metadata:
+  # Name of ArgoCD Application visible in ArgoCD Dashboard
+  name: todo-app
+  # Target namespace where ArgoCD controller operates
+  namespace: argocd
+  # Labels and finalizers for automated cleanup
+  labels:
+    app.kubernetes.io/name: todo-app
+    env: production
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+
+# Specification detailing Git repository source and Kubernetes destination cluster
+spec:
+  # Project association within ArgoCD
+  project: default
+
+  # Source repository configuration
+  source:
+    # URL of GitOps repository holding Helm chart and values
+    repoURL: 'https://github.com/SrinidhiSanjeevi/todo-app-gitops.git'
+    # Target branch or revision to track
+    targetRevision: HEAD
+    # Path to Helm chart within repository
+    path: helm/todo-app
+
+    # Helm parameters override section if needed
+    helm:
+      valueFiles:
+        - values.yaml
+
+  # Destination Kubernetes cluster and namespace
+  destination:
+    # Target cluster internal API URL
+    server: 'https://kubernetes.default.svc'
+    # Namespace where application pods will be deployed
+    namespace: todo-app
+
+  # Automated Synchronization policy settings
+  syncPolicy:
+    # Automated sync configuration
+    automated:
+      # Automatically delete resources no longer present in Git (GitOps pruning)
+      prune: true
+      # Automatically self-heal manually modified drift in Kubernetes cluster
+      selfHeal: true
+    # Sync options enabling namespace auto-creation
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true
+    # Automated retry configuration on sync failures
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

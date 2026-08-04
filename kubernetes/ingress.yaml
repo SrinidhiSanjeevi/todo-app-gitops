@@ -1,0 +1,51 @@
+# API version for Kubernetes Networking group
+apiVersion: networking.k8s.io/v1
+
+# Kind specifies an Ingress resource managing external HTTP/HTTPS routing
+kind: Ingress
+
+# Metadata identifying ingress resource
+metadata:
+  # Name of Ingress resource
+  name: todo-app-ingress
+  # Target namespace
+  namespace: todo-app
+  # Annotations configuring NGINX Ingress Controller behavior
+  annotations:
+    # Specifies NGINX ingress controller class
+    kubernetes.io/ingress.class: "nginx"
+    # Enables URL path rewriting if needed
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    # Enables client body size limits
+    nginx.ingress.kubernetes.io/proxy-body-size: "8m"
+    # CORS annotations allowing cross-origin requests through ingress layer
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+
+# Ingress specification defining routing rules
+spec:
+  # Ingress controller class name reference
+  ingressClassName: nginx
+
+  # Routing rules array
+  rules:
+    # Host header matching rule (Optional: replace with custom domain e.g. todo.example.com)
+    - host: todo.local
+      http:
+        paths:
+          # Path rule routing API requests to Express Backend service
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 5000
+
+          # Path rule routing root requests to React Frontend service
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-service
+                port:
+                  number: 80

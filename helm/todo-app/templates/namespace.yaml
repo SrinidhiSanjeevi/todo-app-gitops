@@ -1,0 +1,13 @@
+# API Version for Core Namespace resource
+apiVersion: v1
+
+# Kind specifies Namespace isolation group
+kind: Namespace
+
+# Metadata configuration template
+metadata:
+  # Dynamically rendered namespace name from values.yaml or Release.Namespace
+  name: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "todo-app.labels" . | nindent 4 }}
+    environment: {{ .Values.global.environment }}
