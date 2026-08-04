@@ -1,0 +1,111 @@
+# Default values for todo-app Helm chart.
+# This is a YAML-formatted file containing configurable parameters.
+
+# Global Environment Configuration
+global:
+  environment: production
+  namespace: todo-app
+
+# Backend Component Configuration
+backend:
+  replicaCount: 2
+
+  image:
+    repository: acrtodoopsdemo.azurecr.io/todo-backend
+    pullPolicy: IfNotPresent
+    tag: "latest"
+
+  service:
+    type: ClusterIP
+    port: 5000
+    metricsPort: 9100
+
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "250m"
+      memory: "256Mi"
+
+  probes:
+    liveness:
+      path: /api/health
+      initialDelaySeconds: 15
+      periodSeconds: 10
+    readiness:
+      path: /api/health
+      initialDelaySeconds: 5
+      periodSeconds: 5
+
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    runAsGroup: 10001
+
+# Frontend Component Configuration
+frontend:
+  replicaCount: 2
+
+  image:
+    repository: acrtodoopsdemo.azurecr.io/todo-frontend
+    pullPolicy: IfNotPresent
+    tag: "latest"
+
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 8080
+
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      cpu: "150m"
+      memory: "128Mi"
+
+  probes:
+    liveness:
+      path: /healthz
+      initialDelaySeconds: 10
+      periodSeconds: 10
+    readiness:
+      path: /healthz
+      initialDelaySeconds: 5
+      periodSeconds: 5
+
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 101
+    runAsGroup: 101
+
+# ConfigMap Environment Variables
+config:
+  NODE_ENV: "production"
+  PORT: "5000"
+  LOG_LEVEL: "info"
+  CORS_ORIGIN: "*"
+  VITE_API_URL: "/api"
+
+# Secret Values (Base64 or Plaintext depending on template decoding)
+secrets:
+  API_SECRET_KEY: "ZGV2b3BzLXNlY3JldC1rZXktMTIzNDU="
+
+# Ingress Controller Configuration
+ingress:
+  enabled: true
+  className: "nginx"
+  host: "todo.local"
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/proxy-body-size: "8m"
+
+# Horizontal Pod Autoscaling Configuration
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80

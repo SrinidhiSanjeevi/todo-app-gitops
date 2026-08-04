@@ -1,0 +1,46 @@
+# API version for core Kubernetes service abstractions
+apiVersion: v1
+
+# Kind specifies that this manifest creates a Service resource for internal load balancing
+kind: Service
+
+# Metadata identifying backend service
+metadata:
+  # Name of the service used for internal DNS resolution (http://backend-service:5000)
+  name: backend-service
+  # Target namespace
+  namespace: todo-app
+  # Labels and annotations for Prometheus Operator scraping discovery
+  labels:
+    app.kubernetes.io/name: todo-app
+    app.kubernetes.io/component: backend
+  annotations:
+    # Prometheus scrape annotation enabling automated metric discovery
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "/metrics"
+    prometheus.io/port: "5000"
+
+# Service specification defining network exposure settings
+spec:
+  # ClusterIP exposes service only internally within the Kubernetes cluster
+  type: ClusterIP
+
+  # Selector targeting backend pods matching label selector app: backend-app
+  selector:
+    app: backend-app
+
+  # Array of mapped service ports
+  ports:
+    # Port name identifier
+    - name: http
+      # Port exposed on service virtual IP
+      port: 5000
+      # Target port on destination pods where container listens
+      targetPort: 5000
+      # Protocol utilized
+      protocol: TCP
+    # Port dedicated to Prometheus metric collection
+    - name: metrics
+      port: 9100
+      targetPort: 5000
+      protocol: TCP

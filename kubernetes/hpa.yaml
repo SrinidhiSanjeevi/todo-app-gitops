@@ -1,0 +1,48 @@
+# API version for Autoscaling group
+apiVersion: autoscaling/v2
+
+# Kind specifies HorizontalPodAutoscaler resource automatically scaling pod replicas
+kind: HorizontalPodAutoscaler
+
+# Metadata identifying HPA resource
+metadata:
+  # Name of autoscaler
+  name: backend-hpa
+  # Target namespace
+  namespace: todo-app
+  labels:
+    app.kubernetes.io/name: todo-app
+    app.kubernetes.io/component: backend
+
+# HPA specification detailing target workload and metric thresholds
+spec:
+  # Reference target Deployment resource to scale
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: backend-deployment
+
+  # Minimum replica count floor
+  minReplicas: 2
+  # Maximum replica count ceiling allowed during high load spikes
+  maxReplicas: 5
+
+  # Metrics array defining scaling trigger conditions
+  metrics:
+    # Scale based on average CPU utilization across backend pods
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          # Trigger scaling when average CPU exceeds 70% of requested allocation
+          averageUtilization: 70
+
+    # Scale based on average Memory utilization
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          # Trigger scaling when average Memory utilization exceeds 80%
+          averageUtilization: 80

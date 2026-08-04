@@ -1,0 +1,25 @@
+# API Version for core Service resource
+apiVersion: v1
+
+# Kind specifies Service load balancing resource
+kind: Service
+
+# Metadata configuration template
+metadata:
+  name: frontend-service
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "todo-app.labels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+
+# Spec section configuring ports and pod selector
+spec:
+  type: {{ .Values.frontend.service.type }}
+  selector:
+    {{- include "todo-app.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+  ports:
+    - name: http
+      port: {{ .Values.frontend.service.port }}
+      targetPort: {{ .Values.frontend.service.targetPort }}
+      protocol: TCP

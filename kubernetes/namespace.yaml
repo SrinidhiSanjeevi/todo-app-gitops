@@ -1,0 +1,15 @@
+# API version for core Kubernetes group
+apiVersion: v1
+
+# Kind specifies that this manifest creates a Namespace isolator
+kind: Namespace
+
+# Metadata defines identifying parameters
+metadata:
+  # Name of the dedicated namespace isolating application resources
+  name: todo-app
+  # Labels used for organization, governance, and Prometheus scraping filters
+  labels:
+    name: todo-app
+    environment: production
+    managed-by: argocd

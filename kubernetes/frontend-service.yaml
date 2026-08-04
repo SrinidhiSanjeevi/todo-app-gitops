@@ -1,0 +1,33 @@
+# API version for core Kubernetes service group
+apiVersion: v1
+
+# Kind specifies Service abstraction for internal load balancing
+kind: Service
+
+# Metadata identifying frontend service
+metadata:
+  # Name of service used for cluster-internal routing (http://frontend-service:80)
+  name: frontend-service
+  # Namespace scope
+  namespace: todo-app
+  labels:
+    app.kubernetes.io/name: todo-app
+    app.kubernetes.io/component: frontend
+
+# Service specification defining network parameters
+spec:
+  # ClusterIP exposes service internally within AKS cluster
+  type: ClusterIP
+
+  # Selector targeting frontend pods matching label app: frontend-app
+  selector:
+    app: frontend-app
+
+  # Array of mapped service ports
+  ports:
+    - name: http
+      # Standard HTTP port exposed by service
+      port: 80
+      # Container port where Nginx listens (unprivileged port 8080)
+      targetPort: 8080
+      protocol: TCP

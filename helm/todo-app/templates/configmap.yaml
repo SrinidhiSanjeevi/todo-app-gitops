@@ -1,0 +1,20 @@
+# API Version for core ConfigMap resource
+apiVersion: v1
+
+# Kind specifies ConfigMap parameter store
+kind: ConfigMap
+
+# Metadata configuration template
+metadata:
+  name: {{ include "todo-app.fullname" . }}-config
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "todo-app.labels" . | nindent 4 }}
+
+# Key-Value pairs dynamically rendered from values.yaml
+data:
+  NODE_ENV: {{ .Values.config.NODE_ENV | quote }}
+  PORT: {{ .Values.config.PORT | quote }}
+  LOG_LEVEL: {{ .Values.config.LOG_LEVEL | quote }}
+  CORS_ORIGIN: {{ .Values.config.CORS_ORIGIN | quote }}
+  VITE_API_URL: {{ .Values.config.VITE_API_URL | quote }}

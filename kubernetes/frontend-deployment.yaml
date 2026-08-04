@@ -1,0 +1,97 @@
+# API version for workload deployment definitions
+apiVersion: apps/v1
+
+# Kind specifies a Deployment controller for managing frontend pod replicas
+kind: Deployment
+
+# Metadata identifying frontend deployment
+metadata:
+  # Name of deployment resource
+  name: frontend-deployment
+  # Target namespace scope
+  namespace: todo-app
+  labels:
+    app.kubernetes.io/name: todo-app
+    app.kubernetes.io/component: frontend
+
+# Deployment specification detailing desired pod states
+spec:
+  # Number of running frontend pod replicas
+  replicas: 2
+
+  # Selector matching target pods controlled by deployment
+  selector:
+    matchLabels:
+      app: frontend-app
+
+  # Pod template definition
+  template:
+    metadata:
+      labels:
+        app: frontend-app
+        app.kubernetes.io/component: frontend
+
+    # Pod specification detailing runtime security and container configuration
+    spec:
+      # Pod security context enforcing unprivileged user execution (Nginx user UID 101)
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+
+      # Containers array running inside pod
+      containers:
+        # Container identifier
+        - name: frontend-container
+          # Image URI pointing to Azure Container Registry (ACR) frontend repository and tag
+          image: acrtodoopsdemo.azurecr.io/todo-frontend:latest
+          imagePullPolicy: IfNotPresent
+
+          # Container-level security parameters
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+
+          # Container exposed network port matching Nginx unprivileged listen port
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+
+          # Inject environment configuration from ConfigMap
+          envFrom:
+            - configMapRef:
+                name: todo-app-config
+
+          # Compute resource allocations for scheduler and HPA
+          resources:
+            requests:
+              cpu: "50m"      # 50 millicores minimum CPU
+              memory: "64Mi"  # 64 Megabytes RAM
+            limits:
+              cpu: "150m"     # 150 millicores maximum CPU
+              memory: "128Mi" # 128 Megabytes RAM
+
+          # Liveness Probe checking if Nginx health endpoint /healthz responds OK
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          # Readiness Probe checking if Nginx is ready to accept HTTP web traffic
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 2
